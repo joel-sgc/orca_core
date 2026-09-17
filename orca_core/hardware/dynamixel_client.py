@@ -149,7 +149,8 @@ class DynamixelClient(MotorClient):
                  lazy_connect: bool = False,
                  pos_scale: Optional[float] = None,
                  vel_scale: Optional[float] = None,
-                 cur_scale: Optional[float] = None):
+                 cur_scale: Optional[float] = None,
+                 isolated_motor_ids: Sequence[int] = ()):
         """Initializes a new client.
 
         Args:
@@ -167,6 +168,12 @@ class DynamixelClient(MotorClient):
                 motor-dependent. If not provided uses the default scale.
             cur_scale: The scaling factor for the currents. This is
                 motor-dependent. If not provided uses the default scale.
+            isolated_motor_ids: Motors excluded from GroupBulkRead/GroupSyncWrite
+                and talked to individually instead. For a motor on a different
+                physical bus segment (e.g. RS485 off the same adapter as a TTL
+                daisy chain), bundling it into the same multi-motor transaction
+                as the rest can make the whole transaction fail even though
+                each motor answers fine on its own.
         """
         import dynamixel_sdk
         self.dxl = dynamixel_sdk
@@ -175,6 +182,7 @@ class DynamixelClient(MotorClient):
         self.port_name = port
         self.baudrate = baudrate
         self.lazy_connect = lazy_connect
+        self.isolated_motor_ids = set(isolated_motor_ids)
 
         self.port_handler = self.dxl.PortHandler(port)
         self.packet_handler = self.dxl.PacketHandler(PROTOCOL_VERSION)
@@ -188,16 +196,21 @@ class DynamixelClient(MotorClient):
             pos_scale=pos_scale if pos_scale is not None else DEFAULT_POS_SCALE,
             vel_scale=vel_scale if vel_scale is not None else DEFAULT_VEL_SCALE,
             cur_scale=cur_scale if cur_scale is not None else DEFAULT_CUR_SCALE,
+            isolated_motor_ids=self.isolated_motor_ids,
         )
-        
+
         self._temp_reader = DynamixelTempReader(
             self,
             self.motor_ids,
             address=ADDR_PRESENT_TEMPERATURE,
             size=LEN_PRESENT_TEMPERATURE,
+            isolated_motor_ids=self.isolated_motor_ids,
         )
-        
-        self._moving_status_reader = DynamixelReader(self, self.motor_ids, ADDR_MOVING_STATUS, LEN_MOVING_STATUS)
+
+        self._moving_status_reader = DynamixelReader(
+            self, self.motor_ids, ADDR_MOVING_STATUS, LEN_MOVING_STATUS,
+            isolated_motor_ids=self.isolated_motor_ids,
+        )
         self._sync_writers = {}
         self._operating_modes = {}
         self._recovering = set()
@@ -456,6 +469,11 @@ class DynamixelClient(MotorClient):
                    size: int):
         """Writes values to a group of motors.
 
+        Motors in ``isolated_motor_ids`` are excluded from the shared
+        GroupSyncWrite and written individually instead, so a motor on a
+        different physical bus segment isn't bundled into the same
+        transaction as the rest.
+
         Args:
             motor_ids: The motor IDs to write to.
             values: The values to write.
@@ -465,31 +483,58 @@ class DynamixelClient(MotorClient):
         times = [time.monotonic()]
         self.check_connected()
         with self._bus_lock:
-            key = (address, size)
-            if key not in self._sync_writers:
-                self._sync_writers[key] = self.dxl.GroupSyncWrite(
-                    self.port_handler, self.packet_handler, address, size)
-            sync_writer = self._sync_writers[key]
-            times.append(time.monotonic())
-            errored_ids = []
-            for motor_id, desired_pos in zip(motor_ids, values):
-                value = signed_to_unsigned(int(desired_pos), size=size)
-                value = value.to_bytes(size, byteorder='little')
-                success = sync_writer.addParam(motor_id, value)
-                if not success:
-                    errored_ids.append(motor_id)
+            grouped, isolated = [], []
+            for motor_id, value in zip(motor_ids, values):
+                target = isolated if motor_id in self.isolated_motor_ids else grouped
+                target.append((motor_id, value))
 
-            if errored_ids:
-                logging.error('Sync write failed for: %s', str(errored_ids))
-            times.append(time.monotonic())
+            if grouped:
+                key = (address, size)
+                if key not in self._sync_writers:
+                    self._sync_writers[key] = self.dxl.GroupSyncWrite(
+                        self.port_handler, self.packet_handler, address, size)
+                sync_writer = self._sync_writers[key]
+                times.append(time.monotonic())
+                errored_ids = []
+                for motor_id, desired_pos in grouped:
+                    value = signed_to_unsigned(int(desired_pos), size=size)
+                    value = value.to_bytes(size, byteorder='little')
+                    success = sync_writer.addParam(motor_id, value)
+                    if not success:
+                        errored_ids.append(motor_id)
 
-            comm_result = sync_writer.txPacket()
-            self.handle_packet_result(comm_result, context='sync_write')
-            times.append(time.monotonic())
+                if errored_ids:
+                    logging.error('Sync write failed for: %s', str(errored_ids))
+                times.append(time.monotonic())
 
-            sync_writer.clearParam()
+                comm_result = sync_writer.txPacket()
+                self.handle_packet_result(comm_result, context='sync_write')
+                times.append(time.monotonic())
+
+                sync_writer.clearParam()
+
+            for motor_id, desired_pos in isolated:
+                self._write_value_individual(motor_id, int(desired_pos), address, size)
         times.append(time.monotonic())
         return times
+
+    def _write_value_individual(self, motor_id: int, value: int, address: int, size: int) -> None:
+        """Writes one control-table value to one motor outside any group
+        instruction. Used for motors in ``isolated_motor_ids``."""
+        unsigned = signed_to_unsigned(value, size=size)
+        writers = {
+            1: self.packet_handler.write1ByteTxRx,
+            2: self.packet_handler.write2ByteTxRx,
+            4: self.packet_handler.write4ByteTxRx,
+        }
+        write = writers.get(size)
+        if write is None:
+            raise ValueError(f'unsupported sync_write size: {size}')
+        comm_result, dxl_error = write(self.port_handler, motor_id, address, unsigned)
+        success = self.handle_packet_result(
+            comm_result, dxl_error, motor_id, context='sync_write (isolated)')
+        if not success:
+            self._flush_input_buffer()
 
     def reboot_motor(self, motor_id: int):
         """Reboots a single motor using the Protocol 2.0 reboot instruction."""
@@ -755,10 +800,16 @@ class DynamixelReader:
     """
 
     def __init__(self, client: DynamixelClient, motor_ids: Sequence[int],
-                 address: int, size: int):
-        """Initializes a new reader."""
+                 address: int, size: int, isolated_motor_ids: "set[int] | None" = None):
+        """Initializes a new reader.
+
+        ``isolated_motor_ids`` (a subset of ``motor_ids``) are excluded from
+        the GroupBulkRead and refreshed individually every ``read()`` call
+        instead, so a motor on a different physical bus segment can't be
+        starved by — or stall — the grouped motors' shared transaction.
+        """
         self.client = client
-        self.motor_ids = motor_ids
+        self.motor_ids = list(motor_ids)
         self.address = address
         self.size = size
         self.last_read_ok = True
@@ -768,11 +819,15 @@ class DynamixelReader:
         self._last_full_fallback = 0.0
         self._initialize_data()
 
+        isolated = set(isolated_motor_ids or ()) & set(self.motor_ids)
+        self._isolated_ids = [m for m in self.motor_ids if m in isolated]
+        self._grouped_ids = [m for m in self.motor_ids if m not in isolated]
+
         self.operation = _AlertCaptureBulkRead(client.port_handler,
                                                client.packet_handler,
                                                client.dxl)
 
-        for motor_id in motor_ids:
+        for motor_id in self._grouped_ids:
             success = self.operation.addParam(motor_id, address, size)
             if not success:
                 raise OSError(
@@ -780,9 +835,22 @@ class DynamixelReader:
                     .format(motor_id))
 
     def read(self, retries: int = 1):
-        """Reads data from the motors, holding the bus lock for the whole transaction."""
+        """Reads data from the motors, holding the bus lock for the whole transaction.
+
+        Isolated motors (see ``isolated_motor_ids``) never join the bulk
+        transaction below; they're refreshed individually every call.
+        """
         self.client.check_connected()
         with self.client._bus_lock:
+            isolated_failed = (
+                self._run_bounded_fallback(list(self._isolated_ids))
+                if self._isolated_ids else []
+            )
+
+            if not self._grouped_ids:
+                self.last_read_ok = not isolated_failed
+                return self._get_data()
+
             success = False
             while not success and retries >= 0:
                 comm_result = self.operation.txRxPacket()
@@ -802,9 +870,9 @@ class DynamixelReader:
                 self._last_full_fallback = now
                 logging.warning(
                     'Bulk read failed; falling back to per-motor reads for %d motor(s)',
-                    len(self.motor_ids))
-                still_failed = self._run_bounded_fallback(list(self.motor_ids))
-                self.last_read_ok = not still_failed
+                    len(self._grouped_ids))
+                still_failed = self._run_bounded_fallback(list(self._grouped_ids))
+                self.last_read_ok = not still_failed and not isolated_failed
                 return self._get_data()
 
             # Check for Alert bits in the status packets we already received.
@@ -813,7 +881,7 @@ class DynamixelReader:
                     self.client._handle_hardware_alert(motor_id)
 
             errored_ids = []
-            for i, motor_id in enumerate(self.motor_ids):
+            for motor_id in self._grouped_ids:
                 available = self.operation.isAvailable(motor_id, self.address,
                                                        self.size)
                 if not available:
@@ -821,7 +889,7 @@ class DynamixelReader:
                     continue
 
                 try:
-                    self._update_data(i, motor_id)
+                    self._update_data(self.motor_ids.index(motor_id), motor_id)
                 except Exception as e:
                     logging.error(f'Error updating data for motor {motor_id}: {e}')
                     errored_ids.append(motor_id)
@@ -834,7 +902,7 @@ class DynamixelReader:
 
             # Expose whether every motor produced fresh data, so callers can tell
             # a real reading apart from the stale cache kept on failed reads.
-            self.last_read_ok = not errored_ids
+            self.last_read_ok = not errored_ids and not isolated_failed
 
             return self._get_data()
 
@@ -883,12 +951,14 @@ class DynamixelPosVelCurReader(DynamixelReader):
                  motor_ids: Sequence[int],
                  pos_scale: float = 1.0,
                  vel_scale: float = 1.0,
-                 cur_scale: float = 1.0):
+                 cur_scale: float = 1.0,
+                 isolated_motor_ids: "set[int] | None" = None):
         super().__init__(
             client,
             motor_ids,
             address=ADDR_PRESENT_POS_VEL_CUR,
             size=LEN_PRESENT_POS_VEL_CUR,
+            isolated_motor_ids=isolated_motor_ids,
         )
         self.pos_scale = pos_scale
         self.vel_scale = vel_scale

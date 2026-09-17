@@ -217,6 +217,9 @@ class OrcaHandConfig(BaseHandConfig):
     joint_encoder_joints: List[str] | None = None
     encoder_serial_port: str = "auto"
     encoder_baudrate: int = DEFAULT_ENCODER_BAUDRATE
+    # Motors excluded from the shared GroupBulkRead/GroupSyncWrite and talked
+    # to individually instead (e.g. a motor on a different bus segment/interface).
+    isolated_motor_ids: List[int] = field(default_factory=list)
 
     @property
     def motor_id_to_idx_dict(self) -> Dict[int, int]:
@@ -327,6 +330,10 @@ class OrcaHandConfig(BaseHandConfig):
             kwargs["encoder_serial_port"] = str(config["encoder_serial_port"])
         if "encoder_baudrate" in config:
             kwargs["encoder_baudrate"] = int(config["encoder_baudrate"])
+        if "isolated_motor_ids" in config:
+            kwargs["isolated_motor_ids"] = [
+                int(motor_id) for motor_id in config["isolated_motor_ids"]
+            ]
 
         return cls(**kwargs)
 
@@ -397,6 +404,12 @@ class OrcaHandConfig(BaseHandConfig):
                     raise HandConfigValidationError(
                         f"joint_encoder_joints contains {joint!r}, which has no encoder slot."
                     )
+
+        for motor_id in self.isolated_motor_ids:
+            if motor_id not in self.motor_ids:
+                raise HandConfigValidationError(
+                    f"isolated_motor_ids contains {motor_id}, which is not in motor_ids."
+                )
 
     def __post_init__(self) -> None:
         self.validate_config()

@@ -168,6 +168,7 @@ class OrcaHand(BaseHand):
             self.config.motor_ids,
             self.config.port,
             self.config.baudrate,
+            isolated_motor_ids=self.config.isolated_motor_ids,
         )
 
     def _trial_probe(self, port: str) -> "tuple[str | None, int | None]":

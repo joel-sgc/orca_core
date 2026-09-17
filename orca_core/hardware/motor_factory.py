@@ -46,6 +46,14 @@ def create_motor_client(
     motor_ids: Sequence[int],
     port: str,
     baudrate: int,
+    isolated_motor_ids: Sequence[int] = (),
 ) -> MotorClient:
-    """Construct (but do not connect) the client for ``motor_type``."""
-    return motor_client_class(motor_type)(motor_ids, port, baudrate)
+    """Construct (but do not connect) the client for ``motor_type``.
+
+    ``isolated_motor_ids`` is only forwarded when non-empty, so families that
+    don't support it (anything but Dynamixel today) are unaffected unless a
+    caller actually asks for it — in which case an unsupported family raises
+    loudly instead of silently ignoring the request.
+    """
+    kwargs = {"isolated_motor_ids": isolated_motor_ids} if isolated_motor_ids else {}
+    return motor_client_class(motor_type)(motor_ids, port, baudrate, **kwargs)
