@@ -1,1 +1,1 @@
-LATEST_VERSION = "v2"  # latest version of the hand model
+LATEST_VERSION = "v1"  # default hand model version used when none is specified

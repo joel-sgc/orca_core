@@ -99,7 +99,9 @@ def get_model_path(model_path=None, model_version: str | None = None, model_name
     if model_path is None or model_path == "models":
         if not os.path.exists(models_dir):
             raise FileNotFoundError("\033[1;35mModels directory not found. Did you delete them?")
-        if model_version is None:
+        if model_version is None and not os.path.isdir(
+            os.path.join(models_dir, selected_version, selected_name)
+        ):
             fallback_version = _find_latest_model_version(models_dir, selected_name)
             if fallback_version is not None:
                 selected_version = fallback_version
