@@ -2,36 +2,46 @@ motor_type: dynamixel
 baudrate: 3000000
 port: /dev/ttyUSB0
 max_current: 800
-
 type: right
-
-# current, velocity, position, multi_turn_position, current_based_position
 control_mode: current_based_position
-
-motor_ids: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
-isolated_motor_ids: [17]
+motor_ids:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+isolated_motor_ids:
+  - 17
 joint_ids:
-  [
-    thumb_mcp,
-    thumb_abd,
-    thumb_pip,
-    thumb_dip,
-    index_abd,
-    index_mcp,
-    index_pip,
-    middle_abd,
-    middle_mcp,
-    middle_pip,
-    ring_abd,
-    ring_mcp,
-    ring_pip,
-    pinky_abd,
-    pinky_mcp,
-    pinky_pip,
-    wrist,
-  ]
-
-# Which motor ID is physically connected to which joint
+  - thumb_mcp
+  - thumb_abd
+  - thumb_pip
+  - thumb_dip
+  - index_abd
+  - index_mcp
+  - index_pip
+  - middle_abd
+  - middle_mcp
+  - middle_pip
+  - ring_abd
+  - ring_mcp
+  - ring_pip
+  - pinky_abd
+  - pinky_mcp
+  - pinky_pip
+  - wrist
 joint_to_motor_map:
   thumb_mcp: 5
   thumb_abd: 6
@@ -50,26 +60,58 @@ joint_to_motor_map:
   pinky_mcp: 15
   pinky_pip: 14
   wrist: -17
-
 joint_roms:
-  thumb_mcp: [-50, 50]
-  thumb_abd: [-20, 42]
-  thumb_pip: [-12, 108]
-  thumb_dip: [-20, 112]
-  index_abd: [-37, 37]
-  index_mcp: [-20, 95]
-  index_pip: [-20, 108]
-  middle_abd: [-37, 37]
-  middle_mcp: [-20, 91]
-  middle_pip: [-20, 107]
-  ring_abd: [-37, 37]
-  ring_mcp: [-20, 91]
-  ring_pip: [-20, 107]
-  pinky_abd: [-37, 37]
-  pinky_mcp: [-20, 98]
-  pinky_pip: [-20, 108]
-  wrist: [-50, 30]
-
+  thumb_mcp:
+    - -50
+    - 50
+  thumb_abd:
+    - -20
+    - 42
+  thumb_pip:
+    - -12
+    - 108
+  thumb_dip:
+    - -20
+    - 112
+  index_abd:
+    - -37
+    - 37
+  index_mcp:
+    - -20
+    - 95
+  index_pip:
+    - -20
+    - 108
+  middle_abd:
+    - -37
+    - 37
+  middle_mcp:
+    - -20
+    - 91
+  middle_pip:
+    - -20
+    - 107
+  ring_abd:
+    - -37
+    - 37
+  ring_mcp:
+    - -20
+    - 91
+  ring_pip:
+    - -20
+    - 107
+  pinky_abd:
+    - -37
+    - 37
+  pinky_mcp:
+    - -20
+    - 98
+  pinky_pip:
+    - -20
+    - 108
+  wrist:
+    - -50
+    - 30
 neutral_position:
   thumb_mcp: -13
   thumb_abd: 42
@@ -88,13 +130,11 @@ neutral_position:
   pinky_mcp: 1
   pinky_pip: 0
   wrist: 0
-
 calibration_current: 750
 calibration_step_size: 0.1
 calibration_step_period: 0.01
-calibration_num_stable: 100 # period * num_stable == 1.0s
+calibration_num_stable: 100
 calibration_threshold: 0.01
-
 calibration_sequence:
   - step: 1
     joints:

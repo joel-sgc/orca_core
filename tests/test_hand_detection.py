@@ -4,6 +4,7 @@ import pytest
 
 import orca_core.hand_factory as hand_factory
 from orca_core import OrcaHand, OrcaHandTouch, detect_hand, load_hand
+from orca_core.hand_config import OrcaHandConfig
 from orca_core.hardware.sensing.serial_discovery import OrcaBoardInfo, parse_orca_info
 
 
@@ -140,7 +141,11 @@ def test_load_hand_detection_fallback_is_default_model(monkeypatch):
     hand = load_hand()
     assert type(hand) is OrcaHand
     assert hand.config.type == "right"
-    assert hand.config.port == "auto"
+    # Detection found nothing to pin, so port should be whatever the
+    # model's own config.yaml declares -- not a hardcoded literal, since
+    # that value is legitimately hardware-specific per checkout.
+    undetected_config = OrcaHandConfig.from_config_path(model_name="orcahand-right")
+    assert hand.config.port == undetected_config.port
 
 
 @pytest.mark.parametrize(

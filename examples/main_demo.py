@@ -10,8 +10,8 @@ def main() -> int:
         description="Run a simple open-close-pinch demo using the current hand config."
     )
     add_hand_arguments(parser)
-    parser.add_argument("--cycles", type=int, default=3)
-    parser.add_argument("--num-steps", type=int, default=100)
+    parser.add_argument("--cycles", type=int, default=100)
+    parser.add_argument("--num-steps", type=int, default=50)
     parser.add_argument("--step-size", type=float, default=0.02)
     args = parser.parse_args()
 
