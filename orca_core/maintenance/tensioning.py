@@ -87,7 +87,7 @@ def run_tension(
             motors_to_move = [
                 motor_id
                 for joint, motor_id in hand.config.joint_to_motor_map.items()
-                if WRIST not in joint.lower() and motor_id in hand.config.motor_ids
+                if WRIST not in joint.lower() and motor_id in hand.config.active_motor_ids
             ]
             hand.set_max_current(hand.config.calibration_current)
 
@@ -105,7 +105,7 @@ def run_tension(
             stall_hold = 1.0
             max_wind_s = 20.0
             moved_idx = np.array(
-                [hand.config.motor_ids.index(mid) for mid in motors_to_move]
+                [hand.config.motor_id_to_idx_dict[mid] for mid in motors_to_move]
             )
 
             for wind_pass, increments in enumerate(
@@ -206,7 +206,7 @@ def run_jitter(
         wrist_motor_id = hand.config.joint_to_motor_map.get("wrist")
         motor_ids = [
             mid
-            for mid in hand.config.motor_ids
+            for mid in hand.config.active_motor_ids
             if include_wrist or mid != wrist_motor_id
         ]
 

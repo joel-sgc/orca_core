@@ -2,11 +2,12 @@
 
 Dynamixel firmware latches hardware errors -- once tripped, the bit stays
 set (and torque is typically disabled by the firmware) until the motor is
-rebooted. orca_core's own auto-recovery (check_overload_and_reboot,
-_handle_hardware_alert) only watches for the Overload bit (0x20); an
-Input Voltage trip (0x01) or any other bit is never noticed or cleared.
-This just reads the raw byte so we can see what's actually latched right
-now, before doing anything about it.
+rebooted. orca_core's own hardware-alert handling (check_overload_and_reboot,
+_handle_hardware_alert) reports every bit it sees, but only reboots the
+motor for the Overload bit (0x20); any other bit (e.g. Input Voltage, 0x01)
+stays latched until something reboots the motor. This script reads the raw
+byte directly, independent of a connected OrcaHand, so it works before
+connecting or to double-check what's actually latched right now.
 
 Bit layout (X-series):
     0x01  Input Voltage Error

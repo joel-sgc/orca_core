@@ -163,12 +163,19 @@ class OrcaHand(BaseHand):
         return self._motor_client
 
     def _create_motor_client(self) -> MotorClient:
+        # Disabled motors never join the client's shared bulk-read group: a
+        # single motor that never answers poisons that whole group's reads,
+        # not just its own.
+        active_motor_ids = self.config.active_motor_ids
         return create_motor_client(
             self.config.motor_type,
-            self.config.motor_ids,
+            active_motor_ids,
             self.config.port,
             self.config.baudrate,
-            isolated_motor_ids=self.config.isolated_motor_ids,
+            isolated_motor_ids=[
+                motor_id for motor_id in self.config.isolated_motor_ids
+                if motor_id in active_motor_ids
+            ],
         )
 
     def _trial_probe(self, port: str) -> "tuple[str | None, int | None]":
@@ -353,7 +360,8 @@ class OrcaHand(BaseHand):
         """Enable torque on the specified motors.
 
         Args:
-            motor_ids: List of motor IDs to enable. Defaults to all motors.
+            motor_ids: List of motor IDs to enable. Defaults to every motor
+                not listed in ``disabled_motor_ids``.
 
         Returns:
             The motor IDs that did not acknowledge the change after the
@@ -361,7 +369,7 @@ class OrcaHand(BaseHand):
             Failures are also logged, so best-effort callers may ignore
             the return value.
         """
-        motor_ids = self.config.motor_ids if motor_ids is None else motor_ids
+        motor_ids = self.config.active_motor_ids if motor_ids is None else motor_ids
 
         with self._motor_lock:
             failed_ids = list(self._motor_client.set_torque_enabled(motor_ids, True))
@@ -375,7 +383,8 @@ class OrcaHand(BaseHand):
         """Disable torque on the specified motors.
 
         Args:
-            motor_ids: List of motor IDs to disable. Defaults to all motors.
+            motor_ids: List of motor IDs to disable. Defaults to every motor
+                not listed in ``disabled_motor_ids``.
 
         Returns:
             The motor IDs that did not acknowledge the change after the
@@ -383,7 +392,7 @@ class OrcaHand(BaseHand):
             Failures are also logged, so best-effort callers may ignore
             the return value.
         """
-        motor_ids = self.config.motor_ids if motor_ids is None else motor_ids
+        motor_ids = self.config.active_motor_ids if motor_ids is None else motor_ids
 
         with self._motor_lock:
             failed_ids = list(self._motor_client.set_torque_enabled(motor_ids, False))
@@ -394,29 +403,31 @@ class OrcaHand(BaseHand):
         return failed_ids
 
     def set_max_current(self, current: Union[float, List[float]]):
-        """Set the maximum allowable current for the motors.
+        """Set the maximum allowable current for the active motors.
 
         Args:
-            current: Either a single float applied to all motors, or a list of
-                per-motor current values (mA). If a list, its length must match
-                the number of configured motors.
+            current: Either a single float applied to every active motor, or
+                a list of per-motor current values (mA). If a list, its
+                length must match the number of active motors (motors not
+                listed in ``disabled_motor_ids``).
 
         Raises:
             ValueError: If *current* is a list with the wrong length.
         """
+        active_motor_ids = self.config.active_motor_ids
         if isinstance(current, list):
-            if len(current) != len(self.config.motor_ids):
+            if len(current) != len(active_motor_ids):
                 raise ValueError(
-                    "Number of currents do not match the number of motors."
+                    "Number of currents do not match the number of active motors."
                 )
 
             with self._motor_lock:
-                self._motor_client.write_desired_current(self.config.motor_ids, current)
+                self._motor_client.write_desired_current(active_motor_ids, current)
             return
 
         with self._motor_lock:
             self._motor_client.write_desired_current(
-                self.config.motor_ids, current * np.ones(len(self.config.motor_ids))
+                active_motor_ids, current * np.ones(len(active_motor_ids))
             )
 
     def set_control_mode(self, mode: str, motor_ids: List[int] = None):
@@ -430,7 +441,8 @@ class OrcaHand(BaseHand):
         Args:
             mode: One of ``"current"``, ``"velocity"``, ``"position"``,
                 ``"multi_turn_position"``, or ``"current_based_position"``.
-            motor_ids: Motors to reconfigure. Defaults to all motors.
+            motor_ids: Motors to reconfigure. Defaults to every motor not
+                listed in ``disabled_motor_ids``.
 
         Raises:
             ValueError: If *mode* is not recognised or *motor_ids* contains
@@ -444,7 +456,7 @@ class OrcaHand(BaseHand):
         # so it can't interleave with other bus traffic.
         with self._motor_lock:
             if motor_ids is None:
-                motor_ids = self.config.motor_ids
+                motor_ids = self.config.active_motor_ids
             elif not all(motor_id in self.config.motor_ids for motor_id in motor_ids):
                 raise ValueError("Invalid motor IDs.")
 
@@ -473,7 +485,8 @@ class OrcaHand(BaseHand):
         Args:
             as_dict: When ``True`` returns a ``dict`` keyed by motor ID.
                 Defaults to ``False`` (returns an array ordered by
-                :attr:`motor_ids`).
+                :attr:`active_motor_ids`; disabled motors are never in the
+                client's group and so never appear here).
 
         Returns:
             Motor positions in radians as an array or dict.
@@ -484,7 +497,7 @@ class OrcaHand(BaseHand):
             if as_dict:
                 return {
                     motor_id: pos
-                    for motor_id, pos in zip(self.config.motor_ids, motor_pos)
+                    for motor_id, pos in zip(self.config.active_motor_ids, motor_pos)
                 }
 
             return motor_pos
@@ -504,7 +517,7 @@ class OrcaHand(BaseHand):
             if as_dict:
                 return {
                     motor_id: current
-                    for motor_id, current in zip(self.config.motor_ids, motor_current)
+                    for motor_id, current in zip(self.config.active_motor_ids, motor_current)
                 }
 
             return motor_current
@@ -541,7 +554,7 @@ class OrcaHand(BaseHand):
             if as_dict:
                 return {
                     motor_id: temp
-                    for motor_id, temp in zip(self.config.motor_ids, motor_temp)
+                    for motor_id, temp in zip(self.config.active_motor_ids, motor_temp)
                 }
 
             return motor_temp
@@ -592,8 +605,14 @@ class OrcaHand(BaseHand):
         if move_to_neutral:
             control_mode = self.config.control_mode
             self.set_control_mode(POSITION)  # neutral position is given in POSITION mode
+            disabled_joints = set(self.config.disabled_joint_ids)
+            neutral = {
+                joint: pos
+                for joint, pos in self.config.neutral_position.items()
+                if joint not in disabled_joints
+            }
             self.set_joint_positions(
-                OrcaJointPositions.from_dict(self.config.neutral_position),
+                OrcaJointPositions.from_dict(neutral),
                 num_steps=NUM_STEPS
             )
             self.set_control_mode(control_mode)
@@ -760,6 +779,7 @@ class OrcaHand(BaseHand):
             force_wrist: Recalibrate the wrist even if already calibrated.
             joints: Restrict to calibration steps touching these joint names.
                 Joints not visited keep their previously-persisted values.
+                Defaults to every joint except those in ``disabled_joint_ids``.
             joint_encoder_client: With ``self.config.joint_feedback_enabled``
                 and an encoder client, the encoder pass also runs and writes a
                 ``joint_encoder_calibration:`` block.
@@ -778,6 +798,11 @@ class OrcaHand(BaseHand):
                 hands don't. Pass ``True`` on a mock to deliberately write a
                 synthetic calibration file.
         """
+        if joints is None:
+            joints = [
+                joint for joint in self.config.joint_ids
+                if joint not in self.config.disabled_joint_ids
+            ]
         if persist is None:
             persist = self._persist_calibration
         if blocking:
@@ -849,16 +874,17 @@ class OrcaHand(BaseHand):
         offset of 0.
         """
         motor_pos = self._read_motor_pos_for_offsets()
+        active_motor_ids = self.config.active_motor_ids
 
         lower_limit = np.array(
-            [self.motor_limits_dict[motor_id][0] for motor_id in self.config.motor_ids]
+            [self.motor_limits_dict[motor_id][0] for motor_id in active_motor_ids]
         )
         higher_limit = np.array(
-            [self.motor_limits_dict[motor_id][1] for motor_id in self.config.motor_ids]
+            [self.motor_limits_dict[motor_id][1] for motor_id in active_motor_ids]
         )
 
         offsets = {}
-        for idx, motor_id in enumerate(self.config.motor_ids):
+        for idx, motor_id in enumerate(active_motor_ids):
             if lower_limit[idx] is None or higher_limit[idx] is None:
                 offsets[motor_id] = 0.0
                 continue
@@ -905,9 +931,9 @@ class OrcaHand(BaseHand):
 
             if isinstance(desired_pos, dict):
                 for motor_id, pos_val in desired_pos.items():
-                    if motor_id not in self.config.motor_ids:
+                    if motor_id not in self.config.active_motor_ids:
                         print(
-                            f"Warning: Motor ID {motor_id} in desired_pos dict is not in self.config.motor_ids. Skipping."
+                            f"Warning: Motor ID {motor_id} in desired_pos dict is not an active motor. Skipping."
                         )
                         continue
                     if pos_val is None or math.isnan(pos_val):
@@ -927,16 +953,17 @@ class OrcaHand(BaseHand):
                 positions_to_write = np.array(positions_to_write, dtype=float)
 
             elif isinstance(desired_pos, (np.ndarray, list)):
-                if len(desired_pos) != len(self.config.motor_ids):
+                active_motor_ids = self.config.active_motor_ids
+                if len(desired_pos) != len(active_motor_ids):
                     raise ValueError(
-                        f"Length of desired_pos (list/ndarray) ({len(desired_pos)}) must match the number of configured motor_ids ({len(self.config.motor_ids)})."
+                        f"Length of desired_pos (list/ndarray) ({len(desired_pos)}) must match the number of active motor_ids ({len(active_motor_ids)})."
                     )
 
                 for idx, pos_val in enumerate(desired_pos):
                     if pos_val is None or math.isnan(pos_val):
                         continue
 
-                    motor_ids_to_write.append(self.config.motor_ids[idx])
+                    motor_ids_to_write.append(active_motor_ids[idx])
                     if rel_to_current:
                         positions_to_write.append(
                             float(pos_val) + current_positions[idx]
@@ -973,7 +1000,7 @@ class OrcaHand(BaseHand):
 
         joint_pos = {}
         for idx, pos in enumerate(motor_pos):
-            motor_id = self.config.motor_ids[idx]
+            motor_id = self.config.active_motor_ids[idx]
             joint_name = self.config.motor_to_joint_dict.get(motor_id)
             if any(limit is None for limit in self.motor_limits_dict[motor_id]):
                 joint_pos[joint_name] = None
@@ -1001,11 +1028,12 @@ class OrcaHand(BaseHand):
         if self._wrap_offsets_dict is None:
             self._compute_wrap_offsets_dict()
 
-        motor_pos = [None] * len(self.config.motor_ids)
+        active_motor_ids = self.config.active_motor_ids
+        motor_pos = [None] * len(active_motor_ids)
 
         for joint_name, pos in joint_pos.items():
             motor_id = self.config.joint_to_motor_map.get(joint_name)
-            if motor_id is None:
+            if motor_id is None or motor_id not in active_motor_ids:
                 continue
 
             if pos is None:
@@ -1284,7 +1312,7 @@ class MockMotorResolutionMixin:
         from .hardware.mock_dynamixel_client import MockDynamixelClient
 
         return MockDynamixelClient(
-            self.config.motor_ids, self.config.port, self.config.baudrate
+            self.config.active_motor_ids, self.config.port, self.config.baudrate
         )
 
     def _resolve_motor_driver(self, port: str) -> bool:

@@ -220,16 +220,43 @@ class OrcaHandConfig(BaseHandConfig):
     # Motors excluded from the shared GroupBulkRead/GroupSyncWrite and talked
     # to individually instead (e.g. a motor on a different bus segment/interface).
     isolated_motor_ids: List[int] = field(default_factory=list)
+    # Motors known to be faulty or otherwise out of service. Their whole finger
+    # is skipped by consumers such as the demo scripts, not just that motor.
+    disabled_motor_ids: List[int] = field(default_factory=list)
 
     @property
     def motor_id_to_idx_dict(self) -> Dict[int, int]:
-        """Map motor ID to its index in ``motor_ids``."""
-        return {motor_id: idx for idx, motor_id in enumerate(self.motor_ids)}
+        """Map motor ID to its index in ``active_motor_ids``.
+
+        This is index space the live motor client actually reads and writes
+        in, so every array a client call returns is indexed through this,
+        not through position in the full (config-declared) ``motor_ids``.
+        """
+        return {motor_id: idx for idx, motor_id in enumerate(self.active_motor_ids)}
 
     @property
     def motor_to_joint_dict(self) -> Dict[int, str]:
         """Map motor ID to joint name."""
         return {motor_id: joint for joint, motor_id in self.joint_to_motor_map.items()}
+
+    @property
+    def disabled_joint_ids(self) -> List[str]:
+        """Joint IDs driven by a disabled motor.
+
+        Sibling joints on the same finger are unaffected: each joint has its
+        own motor, so a disabled one only takes that joint offline.
+        """
+        disabled = set(self.disabled_motor_ids)
+        return [
+            joint for joint, motor_id in self.joint_to_motor_map.items()
+            if motor_id in disabled
+        ]
+
+    @property
+    def active_motor_ids(self) -> List[int]:
+        """``motor_ids`` with every disabled motor removed."""
+        disabled = set(self.disabled_motor_ids)
+        return [motor_id for motor_id in self.motor_ids if motor_id not in disabled]
 
     @property
     def has_joint_encoders(self) -> bool:
@@ -295,7 +322,7 @@ class OrcaHandConfig(BaseHandConfig):
         if "motor_type" in config:
             kwargs["motor_type"] = config["motor_type"]
         if MOTOR_IDS in config:
-            kwargs["motor_ids"] = [int(motor_id) for motor_id in config[MOTOR_IDS]]
+            kwargs["motor_ids"] = [int(motor_id) for motor_id in config[MOTOR_IDS] or []]
         if JOINT_TO_MOTOR_MAP in config:
             joint_to_motor_map, joint_inversion_dict = _canonical_joint_to_motor_map(
                 dict(config[JOINT_TO_MOTOR_MAP])
@@ -332,7 +359,11 @@ class OrcaHandConfig(BaseHandConfig):
             kwargs["encoder_baudrate"] = int(config["encoder_baudrate"])
         if "isolated_motor_ids" in config:
             kwargs["isolated_motor_ids"] = [
-                int(motor_id) for motor_id in config["isolated_motor_ids"]
+                int(motor_id) for motor_id in config["isolated_motor_ids"] or []
+            ]
+        if "disabled_motor_ids" in config:
+            kwargs["disabled_motor_ids"] = [
+                int(motor_id) for motor_id in config["disabled_motor_ids"] or []
             ]
 
         return cls(**kwargs)
@@ -410,6 +441,18 @@ class OrcaHandConfig(BaseHandConfig):
                 raise HandConfigValidationError(
                     f"isolated_motor_ids contains {motor_id}, which is not in motor_ids."
                 )
+
+        for motor_id in self.disabled_motor_ids:
+            if motor_id not in self.motor_ids:
+                raise HandConfigValidationError(
+                    f"disabled_motor_ids contains {motor_id}, which is not in motor_ids."
+                )
+
+        if self.motor_ids and not self.active_motor_ids:
+            raise HandConfigValidationError(
+                "disabled_motor_ids covers every motor in motor_ids; the hand "
+                "would have nothing left to connect to or command."
+            )
 
     def __post_init__(self) -> None:
         self.validate_config()

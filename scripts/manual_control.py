@@ -136,7 +136,8 @@ class HandControlUI:
     def __init__(self, root, hand):
         self.hand = hand
         self.joint_roms = hand.config.joint_roms_dict
-        self.joint_ids = hand.config.joint_ids
+        disabled_joints = set(hand.config.disabled_joint_ids)
+        self.joint_ids = [j for j in hand.config.joint_ids if j not in disabled_joints]
         self.joint_values = {joint: tk.DoubleVar() for joint in self.joint_ids}
 
         current_joint_positions = self.hand.get_joint_position().as_dict()
@@ -214,7 +215,7 @@ class MotorSliderUI:
 
     def __init__(self, root, hand):
         self.hand = hand
-        self.motor_values = {motor: tk.DoubleVar() for motor in hand.config.motor_ids}
+        self.motor_values = {motor: tk.DoubleVar() for motor in hand.config.active_motor_ids}
         self.create_ui(root)
 
     def create_ui(self, root):
@@ -235,7 +236,7 @@ class MotorSliderUI:
         sliders_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
         current_motor_pos = self.hand.get_motor_pos(as_dict=True)
-        for motor in self.hand.config.motor_ids:
+        for motor in self.hand.config.active_motor_ids:
             self.motor_values[motor].set(current_motor_pos[motor])
 
             frame = ttk.Frame(sliders_frame)

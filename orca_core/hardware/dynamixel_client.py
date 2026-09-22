@@ -86,6 +86,23 @@ DYNAMIXEL_MODELS = {
     1080: 'XC430-T240BB-T',
 }
 
+# Hardware Error Status bits (X-series), read from ADDR_HARDWARE_ERROR_STATUS.
+HARDWARE_ERROR_BIT_NAMES = {
+    0x01: 'Input Voltage',
+    0x04: 'Overheating',
+    0x08: 'Motor Encoder',
+    0x10: 'Electrical Shock',
+    0x20: 'Overload',
+}
+
+
+def describe_hardware_error(error_status: int) -> str:
+    """Return a human-readable name for every bit set in a Hardware Error
+    Status byte, or its raw hex if none of the known bits are set."""
+    names = [name for bit, name in HARDWARE_ERROR_BIT_NAMES.items() if error_status & bit]
+    return ', '.join(names) if names else f'unknown (0x{error_status:02X})'
+
+
 def dynamixel_cleanup_handler():
     """Disconnect every open Dynamixel client at interpreter exit."""
     DynamixelClient.cleanup_open_clients()
@@ -214,6 +231,9 @@ class DynamixelClient(MotorClient):
         self._sync_writers = {}
         self._operating_modes = {}
         self._recovering = set()
+        # Last Hardware Error Status byte reported per motor, so a persistent,
+        # unrecovered error is announced once rather than on every packet.
+        self._reported_errors: Dict[int, int] = {}
 
     @property
     def is_connected(self) -> bool:
@@ -559,8 +579,31 @@ class DynamixelClient(MotorClient):
                 return None
             return value
 
+    def _report_hardware_error(self, motor_id: int, error_status: int) -> None:
+        """Announce a motor's Hardware Error Status once per newly observed
+        state, even for bits (e.g. Input Voltage) this client never acts on.
+
+        A reboot clears the register, so callers that recover a motor should
+        reset its entry to ``0`` afterward; otherwise an identical recurrence
+        is treated as already-reported and stays quiet.
+        """
+        if error_status == self._reported_errors.get(motor_id, 0):
+            return
+        self._reported_errors[motor_id] = error_status
+        if error_status == 0:
+            return
+        description = describe_hardware_error(error_status)
+        message = f'Motor {motor_id} hardware error: {description} (0x{error_status:02X})'
+        import os as _os
+        _os.write(2, f'\033[91m⚠ {message}\033[0m\n'.encode())
+        logging.warning(message)
+
     def check_overload_and_reboot(self, motor_ids: Sequence[int]) -> list:
         """Checks for overload errors and reboots affected motors.
+
+        Every motor's Hardware Error Status is reported (see
+        :meth:`_report_hardware_error`) regardless of which bits are set;
+        only the Overload bit triggers an automatic reboot here.
 
         Returns list of motor IDs that were rebooted.
         """
@@ -576,6 +619,7 @@ class DynamixelClient(MotorClient):
                         'Could not read hardware error status for motor %d; '
                         'skipping overload check.', mid)
                     continue
+                self._report_hardware_error(mid, error_status)
                 if error_status & OVERLOAD_BIT:
                     logging.warning(f'Motor {mid} overload detected (error=0x{error_status:02X}), rebooting...')
                     self.reboot_motor(mid)
@@ -583,6 +627,9 @@ class DynamixelClient(MotorClient):
             if rebooted:
                 time.sleep(0.3)
                 for mid in rebooted:
+                    # Reboot clears the error register; a recurrence should
+                    # be reported again, not treated as already-announced.
+                    self._reported_errors[mid] = 0
                     mode = self._operating_modes.get(mid)
                     if mode is not None:
                         # Reboot clears RAM — restore operating mode and torque.
@@ -611,8 +658,9 @@ class DynamixelClient(MotorClient):
 
         Reactively detects the Alert bit (0x80) in dxl_error, which the motor
         sets on every status packet when a hardware error (e.g. overload) is
-        present. When detected, the affected motor is rebooted and restored
-        without any periodic polling.
+        present. When detected, the error is reported (see
+        :meth:`_report_hardware_error`) without any periodic polling; only
+        Overload also triggers an automatic reboot and restore.
         """
         error_message = None
         if comm_result != self.dxl.COMM_SUCCESS:
@@ -634,7 +682,8 @@ class DynamixelClient(MotorClient):
         return True
 
     def _handle_hardware_alert(self, motor_id: int):
-        """Reads the error register and reboots the motor if overloaded, under the bus lock."""
+        """Reads the error register, reports it, and reboots the motor if
+        overloaded, under the bus lock."""
         with self._bus_lock:
             self._handle_hardware_alert_locked(motor_id)
 
@@ -651,13 +700,15 @@ class DynamixelClient(MotorClient):
                     'Could not read hardware error status for motor %d; '
                     'skipping alert recovery.', motor_id)
                 return
+            self._report_hardware_error(motor_id, error_status)
             OVERLOAD_BIT = 0x20
             if error_status & OVERLOAD_BIT:
-                import os as _os
-                _os.write(2, f'\033[91m⚠ OVERLOAD on motor {motor_id} (error=0x{error_status:02X}) — rebooting and recovering...\033[0m\n'.encode())
                 logging.warning(f'Motor {motor_id} overload detected (error=0x{error_status:02X}), rebooting...')
                 self.reboot_motor(motor_id)
                 time.sleep(0.3)
+                # Reboot clears the error register; a recurrence should be
+                # reported again, not treated as already-announced.
+                self._reported_errors[motor_id] = 0
                 mode = self._operating_modes.get(motor_id)
                 if mode is not None:
                     self.set_torque_enabled([motor_id], False, retries=0)
