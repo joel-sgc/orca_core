@@ -1,0 +1,704 @@
+<?xml version="1.0" ?>
+<robot name="orcahand_left">
+  <material name="left_white">
+    <color rgba="1 1 1 1"/>
+  </material>
+  <material name="left_black">
+    <color rgba="0.25 0.25 0.25 1"/>
+  </material>
+  <link name="left_tower">
+    <inertial>
+      <origin xyz="-0.04034 -0.00091 0.01912" rpy="0 0 0"/>
+      <mass value="0.9"/>
+      <inertia ixx="0.0015037503" ixy="-1.0406666e-05" ixz="5.1640519e-06" iyy="0.0012530481" iyz="-1.4064151e-06" izz="0.00079624157"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_tower_main.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_tower_main.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_tower_hull.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_tower_hull.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_tower_text.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_white"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_tower_text.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_wrist" type="revolute">
+    <parent link="left_tower"/>
+    <child link="left_palm"/>
+    <origin xyz="-0.04063 0 0.10487" rpy="0 0 0"/>
+    <axis xyz="-1 0 0"/>
+    <limit lower="-1.0472" upper="0.5236" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_palm">
+    <inertial>
+      <origin xyz="7e-05 0.00092 0.03208" rpy="0 0 0"/>
+      <mass value="0.0257"/>
+      <inertia ixx="6.7748979e-06" ixy="-1.65807e-07" ixz="-4.9243431e-07" iyy="1.6106604e-05" iyz="-2.2864178e-07" izz="1.1468499e-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.002 0.00144 0.03872" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_palm.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0.002 0.00144 0.03872" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_palm.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0.002 0.00144 0.03872" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_palm_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_white"/>
+    </visual>
+    <collision>
+      <origin xyz="0.002 0.00144 0.03872" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_palm_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_thumb_mcp" type="revolute">
+    <parent link="left_palm"/>
+    <child link="left_thumb_mp"/>
+    <origin xyz="0.03021 0.01921 0.02551" rpy="0.53857 0.05595 1.27047"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.87266" upper="0.87266" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_thumb_mp">
+    <inertial>
+      <origin xyz="-0.00247 0 0.004" rpy="0 0 0"/>
+      <mass value="0.00586"/>
+      <inertia ixx="8.398495e-07" ixy="0" ixz="9.2608695e-09" iyy="6.6e-07" iyz="0" izz="2.701505e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_thumb_mp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_thumb_mp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_thumb_abd" type="revolute">
+    <parent link="left_thumb_mp"/>
+    <child link="left_thumb_pp"/>
+    <origin xyz="0 0 0" rpy="-1.22173 0 0"/>
+    <axis xyz="0 -0.34202086 -0.93969236"/>
+    <limit lower="-0.34907" upper="0.73304" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_thumb_pp">
+    <inertial>
+      <origin xyz="0.01152 1e-05 2e-05" rpy="0 0 0"/>
+      <mass value="0.00655"/>
+      <inertia ixx="3e-07" ixy="0" ixz="-1.1505103e-12" iyy="7.3045909e-07" iyz="-1.999473e-08" izz="7.2954091e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.03 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_thumb_pp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0.03 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_thumb_pp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_thumb_pip" type="revolute">
+    <parent link="left_thumb_pp"/>
+    <child link="left_thumb_ip"/>
+    <origin xyz="0.03 0 0" rpy="-2.6535898e-06 -1.5707927 3.1415927"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.20944" upper="1.81496" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_thumb_ip">
+    <inertial>
+      <origin xyz="-0.00135 2e-05 0.01383" rpy="0 0 0"/>
+      <mass value="0.01402"/>
+      <inertia ixx="1.6988186e-06" ixy="-3.2672867e-11" ixz="3.6193722e-08" iyy="1.6399999e-06" iyz="3.7598732e-10" izz="5.9118156e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_thumb_ip.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_thumb_ip.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_thumb_ip_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_white"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_thumb_ip_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_thumb_dip" type="revolute">
+    <parent link="left_thumb_ip"/>
+    <child link="left_thumb_dp"/>
+    <origin xyz="-0.0005 0 0.033" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.34907" upper="1.95477" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_thumb_dp">
+    <inertial>
+      <origin xyz="-0.00233 1e-05 0.01133" rpy="0 0 0"/>
+      <mass value="0.0132"/>
+      <inertia ixx="1.3935422e-06" ixy="-6.0267918e-11" ixz="7.8471827e-08" iyy="1.3699995e-06" iyz="6.8494844e-10" izz="4.4645836e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_thumb_dp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_thumb_dp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0.009 0 -0.011" rpy="0 -0.52 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_thumb_dp_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_white"/>
+    </visual>
+    <collision>
+      <origin xyz="0.009 0 -0.011" rpy="0 -0.52 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_thumb_dp_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_index_abd" type="revolute">
+    <parent link="left_palm"/>
+    <child link="left_index_mp"/>
+    <origin xyz="0.026088797 0.0033399643 0.063884929" rpy="1.6067 -1.13552 0.05339"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.64577" upper="0.64577" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_index_mp">
+    <inertial>
+      <origin xyz="0.00845 0 -4e-05" rpy="0 0 0"/>
+      <mass value="0.00498"/>
+      <inertia ixx="2e-07" ixy="0" ixz="0" iyy="3.1e-07" iyz="0" izz="3.4e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.02 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_index_mp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0.02 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_index_mp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_index_mcp" type="revolute">
+    <parent link="left_index_mp"/>
+    <child link="left_index_pp"/>
+    <origin xyz="0.02 0 0" rpy="3.1415927 1.5707927 3.1415927"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.34907" upper="1.65806" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_index_pp">
+    <inertial>
+      <origin xyz="-0.00135 2e-05 0.01637" rpy="0 0 0"/>
+      <mass value="0.0165"/>
+      <inertia ixx="2.3892906e-06" ixy="-4.1308917e-11" ixz="3.4514481e-08" iyy="2.3099998e-06" iyz="5.3076963e-10" izz="7.1070955e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_index_pp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_index_pp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_index_pp_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_white"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_index_pp_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_index_pip" type="revolute">
+    <parent link="left_index_pp"/>
+    <child link="left_index_ip"/>
+    <origin xyz="-0.0005 0 0.038" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.34907" upper="1.88496" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_index_ip">
+    <inertial>
+      <origin xyz="-0.00071 1e-05 0.01929" rpy="0 0 0"/>
+      <mass value="0.01521"/>
+      <inertia ixx="2.0276184e-06" ixy="2.4739703e-11" ixz="-2.7914729e-07" iyy="2.0600001e-06" iyz="6.0080113e-10" izz="5.9238142e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_index_ip.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_index_ip.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_index_ip_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_white"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_index_ip_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_middle_abd" type="revolute">
+    <parent link="left_palm"/>
+    <child link="left_middle_mp"/>
+    <origin xyz="0.0020000735 0.00144 0.06872" rpy="-1.5707927 -1.5707927 3.1415927"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.64577" upper="0.64577" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_middle_mp">
+    <inertial>
+      <origin xyz="0.00845 0 -4e-05" rpy="0 0 0"/>
+      <mass value="0.00498"/>
+      <inertia ixx="2e-07" ixy="0" ixz="0" iyy="3.1e-07" iyz="0" izz="3.4e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.02 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_middle_mp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0.02 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_middle_mp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_middle_mcp" type="revolute">
+    <parent link="left_middle_mp"/>
+    <child link="left_middle_pp"/>
+    <origin xyz="0.02 0 0" rpy="3.1415927 1.5707927 3.1415927"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.34907" upper="1.58825" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_middle_pp">
+    <inertial>
+      <origin xyz="-0.00144 2e-05 0.02021" rpy="0 0 0"/>
+      <mass value="0.02006"/>
+      <inertia ixx="3.7794448e-06" ixy="-5.2502707e-11" ixz="4.0050213e-08" iyy="3.69e-06" iyz="-1.0802208e-10" izz="8.9055513e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_middle_pp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_middle_pp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_middle_pp_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_white"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_middle_pp_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_middle_pip" type="revolute">
+    <parent link="left_middle_pp"/>
+    <child link="left_middle_ip"/>
+    <origin xyz="-0.0005 0 0.046" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.34907" upper="1.8675" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_middle_ip">
+    <inertial>
+      <origin xyz="-0.00071 1e-05 0.01929" rpy="0 0 0"/>
+      <mass value="0.01521"/>
+      <inertia ixx="2.0276184e-06" ixy="2.4739703e-11" ixz="-2.7914729e-07" iyy="2.0600001e-06" iyz="6.0080113e-10" izz="5.9238142e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_middle_ip.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_middle_ip.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_middle_ip_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_white"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_middle_ip_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_ring_abd" type="revolute">
+    <parent link="left_palm"/>
+    <child link="left_ring_mp"/>
+    <origin xyz="-0.019521022 0.0029782095 0.059544784" rpy="-1.53597 -1.30836 3.05441"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.64577" upper="0.63577" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_ring_mp">
+    <inertial>
+      <origin xyz="0.00845 0 -4e-05" rpy="0 0 0"/>
+      <mass value="0.00498"/>
+      <inertia ixx="2e-07" ixy="0" ixz="0" iyy="3.1e-07" iyz="0" izz="3.4e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.02 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_ring_mp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0.02 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_ring_mp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_ring_mcp" type="revolute">
+    <parent link="left_ring_mp"/>
+    <child link="left_ring_pp"/>
+    <origin xyz="0.02 0 0" rpy="3.1415927 1.5707927 3.1415927"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.34907" upper="1.58825" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_ring_pp">
+    <inertial>
+      <origin xyz="-0.00144 2e-05 0.02021" rpy="0 0 0"/>
+      <mass value="0.02006"/>
+      <inertia ixx="3.7794448e-06" ixy="-5.2502707e-11" ixz="4.0050213e-08" iyy="3.69e-06" iyz="-1.0802208e-10" izz="8.9055513e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_ring_pp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_ring_pp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_ring_pp_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_white"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_ring_pp_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_ring_pip" type="revolute">
+    <parent link="left_ring_pp"/>
+    <child link="left_ring_ip"/>
+    <origin xyz="-0.0005 0 0.046" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.34907" upper="1.8675" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_ring_ip">
+    <inertial>
+      <origin xyz="-0.00071 1e-05 0.01929" rpy="0 0 0"/>
+      <mass value="0.01521"/>
+      <inertia ixx="2.0276184e-06" ixy="2.4739703e-11" ixz="-2.7914729e-07" iyy="2.0600001e-06" iyz="6.0080113e-10" izz="5.9238142e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_ring_ip.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_ring_ip.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_ring_ip_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_white"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_ring_ip_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_pinky_abd" type="revolute">
+    <parent link="left_palm"/>
+    <child link="left_pinky_mp"/>
+    <origin xyz="-0.040584529 0.0064281431 0.045963723" rpy="-1.49694 -0.86149 2.88373"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.64577" upper="0.64577" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_pinky_mp">
+    <inertial>
+      <origin xyz="0.00845 0 -4e-05" rpy="0 0 0"/>
+      <mass value="0.00498"/>
+      <inertia ixx="2e-07" ixy="0" ixz="0" iyy="3.1e-07" iyz="0" izz="3.4e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.02 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_pinky_mp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0.02 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_pinky_mp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_pinky_mcp" type="revolute">
+    <parent link="left_pinky_mp"/>
+    <child link="left_pinky_pp"/>
+    <origin xyz="0.02 0 0" rpy="3.1415927 1.5707927 3.1415927"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.34907" upper="1.71042" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_pinky_pp">
+    <inertial>
+      <origin xyz="-0.00135 2e-05 0.01383" rpy="0 0 0"/>
+      <mass value="0.01402"/>
+      <inertia ixx="1.6988186e-06" ixy="-3.2672867e-11" ixz="3.6193722e-08" iyy="1.6399999e-06" iyz="3.7598732e-10" izz="5.9118156e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_pinky_pp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_pinky_pp.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_pinky_pp_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_white"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_pinky_pp_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_pinky_pip" type="revolute">
+    <parent link="left_pinky_pp"/>
+    <child link="left_pinky_ip"/>
+    <origin xyz="-0.0005 0 0.033" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.34907" upper="1.88496" effort="1" velocity="10"/>
+    <dynamics damping="0.1" friction="0.001"/>
+  </joint>
+  <link name="left_pinky_ip">
+    <inertial>
+      <origin xyz="-0.00071 1e-05 0.01929" rpy="0 0 0"/>
+      <mass value="0.01521"/>
+      <inertia ixx="2.0276184e-06" ixy="2.4739703e-11" ixz="-2.7914729e-07" iyy="2.0600001e-06" iyz="6.0080113e-10" izz="5.9238142e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_pinky_ip.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_pinky_ip.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_visual_pinky_ip_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="left_white"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="assets/mjcf/left/left_collision_pinky_ip_skin.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_thumb_fingertip_joint" type="fixed">
+    <parent link="left_thumb_dp"/>
+    <child link="left_thumb_fingertip"/>
+    <origin xyz="0.0075 0 0.042" rpy="0 0 0"/>
+  </joint>
+  <link name="left_thumb_fingertip"/>
+  <joint name="left_index_fingertip_joint" type="fixed">
+    <parent link="left_index_ip"/>
+    <child link="left_index_fingertip"/>
+    <origin xyz="0.007 0 0.0405" rpy="0 0 0"/>
+  </joint>
+  <link name="left_index_fingertip"/>
+  <joint name="left_middle_fingertip_joint" type="fixed">
+    <parent link="left_middle_ip"/>
+    <child link="left_middle_fingertip"/>
+    <origin xyz="0.007 0 0.0405" rpy="0 0 0"/>
+  </joint>
+  <link name="left_middle_fingertip"/>
+  <joint name="left_ring_fingertip_joint" type="fixed">
+    <parent link="left_ring_ip"/>
+    <child link="left_ring_fingertip"/>
+    <origin xyz="0.007 0 0.0405" rpy="0 0 0"/>
+  </joint>
+  <link name="left_ring_fingertip"/>
+  <joint name="left_pinky_fingertip_joint" type="fixed">
+    <parent link="left_pinky_ip"/>
+    <child link="left_pinky_fingertip"/>
+    <origin xyz="0.007 0 0.0405" rpy="0 0 0"/>
+  </joint>
+  <link name="left_pinky_fingertip"/>
+</robot>

@@ -5,7 +5,7 @@ Learn how to configure your ORCA Hand system settings. The primary configuration
 This file defines parameters crucial for the hand's operation, including communication settings, motor and joint mappings, movement ranges, and calibration procedures.
 
 !!! Warning
-    Be careful when editing this file, incorrect settings can cause unexpected behavior and make debugging more difficult.
+Be careful when editing this file, incorrect settings can cause unexpected behavior and make debugging more difficult.
 
 ---
 
@@ -36,9 +36,9 @@ The bundled configs ship with `port: auto` and a `baudrate` pinned for the hand 
 Override any of them explicitly if you need to:
 
 ```yaml
-port: /dev/cu.usbmodemXXXX  # when multiple adapters are connected (COM3 on Windows)
-baudrate: 1000000           # when motors are configured for a non-default rate
-motor_type: feetech         # when probing might misidentify the bus
+port: /dev/cu.usbmodemXXXX # when multiple adapters are connected (COM3 on Windows)
+baudrate: 1000000 # when motors are configured for a non-default rate
+motor_type: feetech # when probing might misidentify the bus
 ```
 
 You won't normally need to — the script will tell you on the command line if a probe failed and asking for an override would help.
@@ -72,34 +72,33 @@ joint_to_motor_map:
 
 This section defines which motor (by ID) controls each joint and how the sign of the motor ID affects its rotation direction.
 
-* The number is the **motor ID**.
-* The **sign** is determined by direction of rotation when flexing a joint.
+- The number is the **motor ID**.
+- The **sign** is determined by direction of rotation when flexing a joint.
 
 #### Hand-Specific Guidelines
 
-Flexion decides the sign of an servo ID. 
+Flexion decides the sign of an servo ID.
 
-  * If **flexion** moves the servo **CCW** then a **no sign** should be included to the motor ID. 
+- If **flexion** moves the servo **CCW** then a **no sign** should be included to the motor ID.
 
-  * If **flexion** moves the servo **CW** then a **negative sign** should be included to the motor ID. 
+- If **flexion** moves the servo **CW** then a **negative sign** should be included to the motor ID.
 
 **Right hand assembly:** Most joints flexions lead to **CW** rotation so mostly negative signs are found.
 
 **Left hand assembly:** Most joints flexions lead to **CCW** rotation so mostly none/positive signs are found.
 
-If tendon routing is done properly, all joints should have the same sign, except for `index_abd`, `middle_abd` and `pinky_abd` joints. 
+If tendon routing is done properly, all joints should have the same sign, except for `index_abd`, `middle_abd` and `pinky_abd` joints.
 
-> **Note:** For abduction joints, flexion refers to movement **away from the thumb** and for the thumb flexion is **towards the fingers**. 
+> **Note:** For abduction joints, flexion refers to movement **away from the thumb** and for the thumb flexion is **towards the fingers**.
 
 ---
-
 
 For example:
 
 ```yaml
 joint_to_motor_map:
-  thumb_mcp: -4   # thumb_mcp flexion moves the motor with ID 4 CW
-  index_abd: 14   # index_abd flexion moves the motor with ID 14 CCW
+  thumb_mcp: -4 # thumb_mcp flexion moves the motor with ID 4 CW
+  index_abd: 14 # index_abd flexion moves the motor with ID 14 CCW
 ```
 
 ---

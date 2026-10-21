@@ -43,23 +43,25 @@ disabled_motor_ids:
   # - 16
   - 17
 joint_ids:
-  - thumb_mcp
-  - thumb_abd
-  - thumb_pip
-  - thumb_dip
-  - index_abd
-  - index_mcp
-  - index_pip
-  - middle_abd
-  - middle_mcp
-  - middle_pip
-  - ring_abd
-  - ring_mcp
-  - ring_pip
-  - pinky_abd
-  - pinky_mcp
-  - pinky_pip
-  - wrist
+  [
+    - thumb_mcp,
+    - thumb_abd,
+    - thumb_pip,
+    - thumb_dip,
+    - index_abd,
+    - index_mcp,
+    - index_pip,
+    - middle_abd,
+    - middle_mcp,
+    - middle_pip,
+    - ring_abd,
+    - ring_mcp,
+    - ring_pip,
+    - pinky_abd,
+    - pinky_mcp,
+    - pinky_pip,
+    - wrist,
+  ]
 joint_to_motor_map:
   thumb_mcp: 5
   thumb_abd: 6
@@ -148,10 +150,10 @@ neutral_position:
   pinky_mcp: 1
   pinky_pip: 0
   wrist: 0
-calibration_current: 750
+calibration_current: 350
 calibration_step_size: 0.1
-calibration_step_period: 0.01
-calibration_num_stable: 100
+calibration_step_period: 0.001
+calibration_num_stable: 10 # should be period * num_stable > 1
 calibration_threshold: 0.01
 calibration_sequence:
   - step: 1
